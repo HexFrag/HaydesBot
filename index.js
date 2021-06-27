@@ -9,7 +9,7 @@ client.once('ready', () => {
 
 client.login(token);
 
-Discord.Permissions
+
 
 client.on('messageReactionAdd', async(reaction, user) => {
    
