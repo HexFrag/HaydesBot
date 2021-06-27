@@ -60,6 +60,8 @@ client.on('message', message => {
     if (!args.length) {
         return message.channel.send(`You didn't provide any arguments, ${message.author}!`);
     } else if (command === 'prune') {
+
+        //Add one to include the command message.
 		const amount = parseInt(args[0]) + 1;
 
 		if (isNaN(amount)) {
