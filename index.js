@@ -40,8 +40,8 @@ client.on('messageReactionAdd', async(reaction, user) => {
 
     
     console.log(`${reaction.message.author}'s message "${reaction.message.content}" gained a reaction!`);
-        // The reaction is now also fully available and the properties will be reflected accurately:
-        console.log(`${reaction.count} user(s) have given the same reaction to this message!`);
+    // The reaction is now also fully available and the properties will be reflected accurately:
+    console.log(`${reaction.count} user(s) have given the same reaction to this message!`);
 });
 
 
@@ -58,8 +58,18 @@ client.on('message', message => {
 	const command = args.shift().toLowerCase();
     
     if (!args.length) {
-        return message.channel.send(`You didn't provide any arguments, ${message.author}!`);
-    } else if (command === 'prune') {
+
+        //command to determine if the bot is active and works in the channel.
+        if (command === 'ping')
+        {
+            return message.reply(`Latency: ${Date.now() - message.createdTimestamp}ms | API Latency: ${Math.round(client.ws.ping)}ms`);
+        }
+        else
+        {
+            return message.channel.send(`You didn't provide any arguments, ${message.author}!`);
+        } 
+    }    
+    else if (command === 'prune') {
 
         //Add one to include the command message.
 		const amount = parseInt(args[0]) + 1;
