@@ -29,7 +29,7 @@ client.on('messageReactionAdd', async(reaction, user) => {
         return;    
     
     reaction.message.guild.members.fetch(user).then((member) =>{
-        const initRole = reaction.message.guild.roles.cache.find(role => role.name === 'Initiate');
+        const initRole = reaction.message.guild.roles.cache.find(role => role.name === 'Visitor');
         member.roles.add(initRole)
         .then(() => 
         {
