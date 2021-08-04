@@ -1,7 +1,8 @@
 const Discord = require('discord.js');
+//const { BlizzAPI } = require('blizzapi');
 const client = new Discord.Client({ partials: ['MESSAGE', 'CHANNEL', 'REACTION'] });
 
-const { prefix, token} = require('./config.json');
+const { prefix, token, clientId, clientSecret} = require('./config.json');
 
 client.once('ready', () => {
 	console.log('Ready!');
@@ -9,6 +10,12 @@ client.once('ready', () => {
 
 client.login(token);
 
+/*const api = new BlizzAPI({
+    region: 'us',
+    clientId: clientId,
+    clientSecret: clientSecret
+  });
+*/
 
 
 client.on('messageReactionAdd', async(reaction, user) => {
@@ -38,10 +45,6 @@ client.on('messageReactionAdd', async(reaction, user) => {
     })
     .catch(console.error);
 
-    
-    console.log(`${reaction.message.author}'s message "${reaction.message.content}" gained a reaction!`);
-    // The reaction is now also fully available and the properties will be reflected accurately:
-    console.log(`${reaction.count} user(s) have given the same reaction to this message!`);
 });
 
 
@@ -49,10 +52,7 @@ client.on('messageReactionAdd', async(reaction, user) => {
 client.on('message', message => {
     if (!message.content.startsWith(prefix) || message.author.bot) return;
 
-    if(!message.member.roles.cache.some(role => role.name === 'Admin'))
-    {
-        return message.reply('You do not have permission to use this command');
-    }
+    
 
 	const args = message.content.slice(prefix.length).trim().split(/ +/);
 	const command = args.shift().toLowerCase();
@@ -62,14 +62,27 @@ client.on('message', message => {
         //command to determine if the bot is active and works in the channel.
         if (command === 'ping')
         {
+            if(!message.member.roles.cache.some(role => role.name === 'Admin'))
+            {
+                return message.reply('You do not have permission to use this command');
+            }
+
+
             return message.reply(`Latency: ${Date.now() - message.createdTimestamp}ms | API Latency: ${Math.round(client.ws.ping)}ms`);
         }
-        else
+        
+        //remove this because it interferes with any bot that may not have arguments, like the raid helper.
+        /*else
         {
             return message.channel.send(`You didn't provide any arguments, ${message.author}!`);
-        } 
+        } */
     }    
     else if (command === 'prune') {
+
+        if(!message.member.roles.cache.some(role => role.name === 'Admin'))
+        {
+            return message.reply('You do not have permission to use this command');
+        }
 
         //Add one to include the command message.
 		const amount = parseInt(args[0]) + 1;
