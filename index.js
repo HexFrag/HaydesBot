@@ -1,8 +1,13 @@
 const Discord = require('discord.js');
-//const { BlizzAPI } = require('blizzapi');
-const client = new Discord.Client({ partials: ['MESSAGE', 'CHANNEL', 'REACTION'] });
+
+const client = new Discord.Client({ partials: ['USER', 'MESSAGE', 'CHANNEL', 'REACTION', 'GUILD_MEMBER'] });
 
 const { prefix, token, clientId, clientSecret} = require('./config.json');
+
+const WELCOME_MESSAGE = "Welcome to the Gather Your Allies community.  To learn everything you need to know please check out our ";
+const BOT_TESTING_CHANNEL_ID = "858914306736259103";
+const GUILD_ROLE_LEDGER = "914727707550552124";
+const WELCOME_FAQ_CHANNEL_ID = "907852726287884319";
 
 client.once('ready', () => {
 	console.log('Ready!');
@@ -10,12 +15,6 @@ client.once('ready', () => {
 
 client.login(token);
 
-/*const api = new BlizzAPI({
-    region: 'us',
-    clientId: clientId,
-    clientSecret: clientSecret
-  });
-*/
 
 
 client.on('messageReactionAdd', async(reaction, user) => {
@@ -47,7 +46,46 @@ client.on('messageReactionAdd', async(reaction, user) => {
 
 });
 
+client.on("guildMemberUpdate", async (oldMember, newMember) => {
+   
+    
 
+    let msg = `Role Update on ${newMember.displayName} `;
+
+    let welcomeMsg = WELCOME_MESSAGE + `<#${WELCOME_FAQ_CHANNEL_ID}>`;
+
+    let somethingChanged = false;
+
+    if(oldMember.roles.cache.size > newMember.roles.cache.size)
+    {
+        oldMember.roles.cache.forEach(role => {
+            if(!newMember.roles.cache.has(role.id)){
+                somethingChanged = true;
+                msg += `removed role ${role.name}`;
+            }
+        });
+    }
+    else if(oldMember.roles.cache.size < newMember.roles.cache.size)
+    {       
+        newMember.roles.cache.forEach(role => {
+            if(!oldMember.roles.cache.has(role.id)){
+                somethingChanged = true;
+                msg += `added role ${role.name}`; 
+                if(!newMember.user.bot && role.name == "Member")                
+                    newMember.send(welcomeMsg);                
+                else if(newMember.user.bot && role.name == "Member")                
+                    client.channels.cache.get(BOT_TESTING_CHANNEL_ID).send(welcomeMsg);
+                
+            }
+        });
+    }
+
+    if(somethingChanged)
+    {
+        client.channels.cache.get(GUILD_ROLE_LEDGER).send(msg);
+        //console.log(msg);
+    }
+});
 
 client.on('message', message => {
     if (!message.content.startsWith(prefix) || message.author.bot) return;
@@ -70,12 +108,6 @@ client.on('message', message => {
 
             return message.reply(`Latency: ${Date.now() - message.createdTimestamp}ms | API Latency: ${Math.round(client.ws.ping)}ms`);
         }
-        
-        //remove this because it interferes with any bot that may not have arguments, like the raid helper.
-        /*else
-        {
-            return message.channel.send(`You didn't provide any arguments, ${message.author}!`);
-        } */
     }    
     else if (command === 'prune') {
 
