@@ -4,7 +4,7 @@ const client = new Discord.Client({ partials: ['USER', 'MESSAGE', 'CHANNEL', 'RE
 
 const { prefix, token, clientId, clientSecret} = require('./config.json');
 
-const WELCOME_MESSAGE = "Welcome to the Gather Your Allies community.  To learn everything you need to know please check out our ";
+const WELCOME_MESSAGE = "Welcome to the <Gather Your Allies> community! To learn everything you need to know, please check out our #welcome-faq.";
 const BOT_TESTING_CHANNEL_ID = "858914306736259103";
 const GUILD_ROLE_LEDGER = "914727707550552124";
 const WELCOME_FAQ_CHANNEL_ID = "907852726287884319";
@@ -71,9 +71,9 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
             if(!oldMember.roles.cache.has(role.id)){
                 somethingChanged = true;
                 msg += `added role ${role.name}`; 
-                if(!newMember.user.bot && role.name == "Member")                
+                if(!newMember.user.bot && role.name == "Allies")                
                     newMember.send(welcomeMsg);                
-                else if(newMember.user.bot && role.name == "Member")                
+                else if(newMember.user.bot && role.name == "Allies")                
                     client.channels.cache.get(BOT_TESTING_CHANNEL_ID).send(welcomeMsg);
                 
             }
