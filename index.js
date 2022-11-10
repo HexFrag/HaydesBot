@@ -118,12 +118,12 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
         msg = msg.replace("@role", roleName);
         msg = msg.replace("@action", action);       
 
-        //client.channels.cache.get(GUILD_ROLE_LEDGER).send(msg);
-        console.log("LEDGER: " + msg);
+        client.channels.cache.get(GUILD_ROLE_LEDGER).send(msg);
+        //console.log("LEDGER: " + msg);
         if(announce)
         {
-            //client.channels.cache.get(BOT_TESTING_CHANNEL_ID).send(msg);
-            console.log("ANNOUNCE: " + msg);
+            client.channels.cache.get(BOT_TESTING_CHANNEL_ID).send(msg);
+            //console.log("ANNOUNCE: " + msg);
         }
         //console.log(msg);
     }
