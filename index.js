@@ -1,4 +1,5 @@
 const Discord = require('discord.js');
+//const ytdl = require('ytdl-core');
 
 const client = new Discord.Client({ partials: ['USER', 'MESSAGE', 'CHANNEL', 'REACTION', 'GUILD_MEMBER'] });
 
@@ -15,7 +16,19 @@ client.once('ready', () => {
 
 client.login(token);
 
-
+/*
+client.on('message', msg => {
+  if (msg.content === '!play') {
+    msg.channel.send('Playing audio from YouTube!');
+    const stream = ytdl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', { filter: 'audioonly' });
+    const dispatcher = msg.connection.playStream(stream);
+    dispatcher.on('end', () => {
+      msg.channel.send('Audio playback finished.');
+    });
+  }
+});
+client.login('your-discord-bot-token-goes-here');
+*/
 
 client.on('messageReactionAdd', async(reaction, user) => {
    
@@ -50,18 +63,30 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
    
     
 
-    let msg = `Role Update on ${newMember.displayName} `;
+    let msg = `${newMember.displayName} @action the rank of @role`;
 
     let welcomeMsg = WELCOME_MESSAGE + `<#${WELCOME_FAQ_CHANNEL_ID}>`;
 
     let somethingChanged = false;
+    let announce = false;
+    let roleName = '';
+    let action = '';
 
     if(oldMember.roles.cache.size > newMember.roles.cache.size)
     {
         oldMember.roles.cache.forEach(role => {
             if(!newMember.roles.cache.has(role.id)){
                 somethingChanged = true;
-                msg += `removed role ${role.name}`;
+                //msg += `removed role ${role.name}`;
+
+                roleName = role.name;
+                action = 'has moved to';
+                announce = (role.name == "Member" || 
+                    role.name == "Raider" || 
+                    role.name == "Core Raider" || 
+                    role.name == "Officer"||
+                    role.name == "Bot" );
+
             }
         });
     }
@@ -70,19 +95,36 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
         newMember.roles.cache.forEach(role => {
             if(!oldMember.roles.cache.has(role.id)){
                 somethingChanged = true;
-                msg += `added role ${role.name}`; 
-                if(!newMember.user.bot && role.name == "Allies")                
+                //msg += `added role ${role.name}`; 
+
+                roleName = role.name;
+                action = "has reached";
+                announce = (role.name == "Member" || 
+                    role.name == "Raider" || 
+                    role.name == "Core Raider" || 
+                    role.name == "Officer" ||
+                    role.name == "Bot" );
+
+                if(!newMember.user.bot && role.name == "Allies")
+                {
                     newMember.send(welcomeMsg);                
-                else if(newMember.user.bot && role.name == "Allies")                
-                    client.channels.cache.get(BOT_TESTING_CHANNEL_ID).send(welcomeMsg);
-                
+                }
             }
         });
     }
 
     if(somethingChanged)
     {
-        client.channels.cache.get(GUILD_ROLE_LEDGER).send(msg);
+        msg = msg.replace("@role", roleName);
+        msg = msg.replace("@action", action);       
+
+        //client.channels.cache.get(GUILD_ROLE_LEDGER).send(msg);
+        console.log("LEDGER: " + msg);
+        if(announce)
+        {
+            //client.channels.cache.get(BOT_TESTING_CHANNEL_ID).send(msg);
+            console.log("ANNOUNCE: " + msg);
+        }
         //console.log(msg);
     }
 });
