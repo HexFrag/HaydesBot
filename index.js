@@ -80,7 +80,7 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
                 //msg += `removed role ${role.name}`;
 
                 roleName = role.name;
-                action = 'has moved to';
+                action = 'has moved from';
                 announce = (role.name == "Member" || 
                     role.name == "Raider" || 
                     role.name == "Core Raider" || 
