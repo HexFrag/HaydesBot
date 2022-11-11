@@ -11,6 +11,8 @@
   "dependencies": {
     "blizzapi": "^2.0.2",
     "discord.js": "^12.5.3",
-    "dotenv": "^10.0.0"
+    "dotenv": "^10.0.0",
+    "mysql": "^2.18.1",
+    "undici": "^5.12.0"
   }
 }

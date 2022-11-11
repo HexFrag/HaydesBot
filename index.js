@@ -3,7 +3,17 @@ const Discord = require('discord.js');
 
 const client = new Discord.Client({ partials: ['USER', 'MESSAGE', 'CHANNEL', 'REACTION', 'GUILD_MEMBER'] });
 
-const { prefix, token, clientId, clientSecret} = require('./config.json');
+const DataStore = require('./DataStore.js');
+
+
+
+const config = require('./config.json');
+const { request } = require('undici');
+const mysql = require('mysql');
+
+const prefix = config.client.prefix;
+
+const dataStore = new DataStore(config.mysql, mysql);
 
 const WELCOME_MESSAGE = "Welcome to the <Gather Your Allies> community! To learn everything you need to know, please check out our #welcome-faq.";
 const BOT_TESTING_CHANNEL_ID = "858914306736259103";
@@ -15,7 +25,7 @@ client.once('ready', () => {
 	console.log('Ready!');
 });
 
-client.login(token);
+client.login(config.client.token);
 
 /*
 client.on('message', msg => {
@@ -43,6 +53,16 @@ client.on('messageReactionAdd', async(reaction, user) => {
 			// Return as `reaction.message.author` may be undefined/null
 			return;
         }
+    }
+
+    if(reaction.message.channel.id === BOT_TESTING_CHANNEL_ID)
+    {
+        //const requestResult = await request('https://jbm6m3eptm.us-east-1.awsapprunner.com/raiders/?active=true');
+        //const { count } = await requestResult.body.json();
+        //console.log(count);
+        //console.log("--------------")
+        var dataResult = dataStore.query("SELECT * FROM TestTable");
+        console.log(dataResult);
     }
 
     if(reaction.message.channel.name !== 'rules')
