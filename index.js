@@ -9,6 +9,7 @@ const WELCOME_MESSAGE = "Welcome to the <Gather Your Allies> community! To learn
 const BOT_TESTING_CHANNEL_ID = "858914306736259103";
 const GUILD_ROLE_LEDGER = "914727707550552124";
 const WELCOME_FAQ_CHANNEL_ID = "907852726287884319";
+const GENERAL_CHANNEL_ID = "857899639486545932";
 
 client.once('ready', () => {
 	console.log('Ready!');
@@ -98,7 +99,7 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
                 //msg += `added role ${role.name}`; 
 
                 roleName = role.name;
-                action = "has reached";
+                action = "has moved to";
                 announce = (role.name == "Member" || 
                     role.name == "Raider" || 
                     role.name == "Core Raider" || 
@@ -122,7 +123,7 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
         //console.log("LEDGER: " + msg);
         if(announce)
         {
-            client.channels.cache.get(BOT_TESTING_CHANNEL_ID).send(msg);
+            client.channels.cache.get(GENERAL_CHANNEL_ID).send(msg);
             //console.log("ANNOUNCE: " + msg);
         }
         //console.log(msg);
