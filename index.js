@@ -8,12 +8,12 @@ const DataStore = require('./DataStore.js');
 
 
 const config = require('./config.json');
-const { request } = require('undici');
-const mysql = require('mysql');
+
+const GxpController = require('./GxpController.js');
 
 const prefix = config.client.prefix;
 
-const dataStore = new DataStore(config.mysql, mysql);
+const gxpController = new GxpController(config);
 
 const WELCOME_MESSAGE = "Welcome to the <Gather Your Allies> community! To learn everything you need to know, please check out our #welcome-faq.";
 const BOT_TESTING_CHANNEL_ID = "858914306736259103";
@@ -61,8 +61,12 @@ client.on('messageReactionAdd', async(reaction, user) => {
         //const { count } = await requestResult.body.json();
         //console.log(count);
         //console.log("--------------")
-        var dataResult = dataStore.query("SELECT * FROM TestTable");
-        console.log(dataResult);
+
+        await gxpController.updateRaidersGxp(null);
+        await gxpController.updateRaidersMySql();
+
+        //var dataResult = dataStore.query("INSERT INTO TestTable (Text) VALUES ('hellllllo')");
+        //console.log("Raiders: " + Raiders.length);
     }
 
     if(reaction.message.channel.name !== 'rules')
