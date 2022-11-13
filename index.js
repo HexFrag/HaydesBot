@@ -23,6 +23,8 @@ const GENERAL_CHANNEL_ID = "857899639486545932";
 
 client.once('ready', () => {
 	console.log('Ready!');
+    gxpLookup("Aeires", client.channels.cache.get(BOT_TESTING_CHANNEL_ID));
+    //updateGxp();
 });
 
 client.login(config.client.token);
@@ -62,9 +64,7 @@ client.on('messageReactionAdd', async(reaction, user) => {
         //console.log(count);
         //console.log("--------------")
 
-        await gxpController.updateRaidersGxp(null);
-        await gxpController.updateRaidersMySql();
-
+        
         //var dataResult = dataStore.query("INSERT INTO TestTable (Text) VALUES ('hellllllo')");
         //console.log("Raiders: " + Raiders.length);
     }
@@ -154,7 +154,7 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
     }
 });
 
-client.on('message', message => {
+client.on('message', async message => {
     if (!message.content.startsWith(prefix) || message.author.bot) return;
 
     
@@ -174,6 +174,20 @@ client.on('message', message => {
 
 
             return message.reply(`Latency: ${Date.now() - message.createdTimestamp}ms | API Latency: ${Math.round(client.ws.ping)}ms`);
+        }
+        else if (command === 'gxp')
+        {            
+            let name = message.member.displayName;
+            //get the gxp info by name
+            //return to channel
+            let raiderInfo = await gxpController.lookupRaiderInfo(name);
+
+            console.log(raiderInfo);
+            
+        }
+        else if(command === "discordGxpUpdate")
+        {
+            
         }
     }    
     else if (command === 'prune') {
@@ -198,15 +212,21 @@ client.on('message', message => {
             message.channel.send('there was an error trying to prune messages in this channel!');
         });
 	}
-    else if (command === 'gxp')
-    {
-        let name = message.author.name;
-        //get the gxp info by name
-        //return to channel
-        
-    }
+    
+
     
     
     
 });
+
+
+function gxpLookup(name, channel)
+{
+    gxpController.requestGxpInfoLookup(name, channel);    
+}
+
+function updateGxp()
+{
+    gxpController.requestGxpUpdate();
+}
 

@@ -4,35 +4,38 @@ module.exports = class GxpController {
 
     RAIDER_URL = 'https://jbm6m3eptm.us-east-1.awsapprunner.com/raiders/?active=true';
 
-    RaiderPages;
-    Raiders;   
+    RaiderPages = [];
+    Raiders = [];   
     Store; 
+    EventEmitter;  
     
-    static IsUpdating = false;
-    static ExitUpdate = false;
-    static WaitCount = 0;
-    static DataStore;
+    OnGxpUpdated = "OnGxpUpdated";
+    
+
+    
 
     constructor(config)
     {
         const { request } = require('undici');
         const DataStore = require('./DataStore.js');
+        const Events = require('events');
+        this.EventEmitter = new Events.EventEmitter();
         this.Request = request
         this.RaiderPages = [];
         this.Raiders = [];
-        this.Store = new DataStore(config.mysql);        
+        this.Store = new DataStore(config.mysql);
+        
     }
 
-    getRaiderPages()
+    async requestGxpUpdate()
     {
-        return this.RaiderPages;
+        this.EventEmitter.addListener(this.OnGxpUpdated, this.consolidateRaiderData);
+        await this.updateRaidersGxp(null);
     }
+    
 
     async updateRaidersGxp(url)
     {
-        
-        this.IsUpdating = true;
-
         if(url === null)
         {
             console.log("Started GXP Update");
@@ -45,50 +48,52 @@ module.exports = class GxpController {
         let raiderObj = await requestResult.body.json();        
         this.RaiderPages.push(raiderObj);
 
-        if(raiderObj.next !== null && raiderObj.next.length > 0)  
+        if(raiderObj.next)  
             return await this.updateRaidersGxp(raiderObj.next);
 
-        this.IsUpdating = false;
-        console.log("Ended GXP Update");
+        console.log(`Ended GXP Update with ${this.RaiderPages.length} pages`);        
+        this.EventEmitter.emit(this.OnGxpUpdated, this);
+        
+        
     }
 
-    async updateRaidersMySql(dataStore)
+    consolidateRaiderData(context)
     {   
-        console.log("Starting MySQL Update");
+        console.log(`Starting consolidateRaiderData with ${context.RaiderPages.length} pages`);
 
-        this.WaitCount = 0;
+        const raiders = [];
 
-        while(this.IsUpdating === true && this.ExitUpdate === false)
-        {
-            await new Promise(r => setTimeout(r, 1000));
-            this.WaitCount++;
-            if(this.WaitCount > 30) //30sec
-                this.ExitUpdate = true;
-            if(this.ExitUpdate && this.RaiderPages.length == 0)
-                console.log("GXP Update timed out at 30s server is down");
-            else if(this.RaiderPages.length > 0)
-                console.log("GXP Update timed out at 30s server is slow, data may be missing");
+        for(let x = 0; x < context.RaiderPages.length; x++)
+        {  
+            for(let i = 0; i < context.RaiderPages[x].results.length; i++)
+            {
+                let raider = context.RaiderPages[x].results[i];
+                raiders.push({
+                    iid: 0,
+                    Id: raider.id,
+                    Name: raider.name,
+                    TotalRaids: raider.totalRaids,
+                    TotalWeeks: raider.totalWeeks,
+                    Experience: raider.experience,
+                    CurrentRank: raider.experienceLevel?.name ?? "No Rank",
+                    Active: raider.active
+                });
+            }
         }
-
-
-        //console.log(this.RaiderPages)
-
-        this.RaiderPages.forEach(async (item, index) => {
-            item.results.forEach(async (i, x) => {
-                let data = {
-                    Id: i.id,
-                    Name: i.name,
-                    JoinDate: i.join_timestamp,
-                    TotalWeeks: i.totalWeeks,
-                    Experience: i.experience,
-                    CurrentRank: i.experienceLevel.name,
-                    Active: i.active
-                };
-                
-                await this.Store.updateRaider(data);
-            });
-        });
-
-        console.log("Finished MySQL Update");
+        console.log(`Created ${raiders.length} raiders`);
+        context.Store.requestUpdate(raiders);
+        context.EventEmitter.removeListener(context.OnGxpUpdated);
     }
+
+    requestGxpInfoLookup(name, channel)
+    {
+        this.Store.processInfoRequest(name, channel);
+    }
+
+    gxpRequestResponse(gxpInfo, channel)
+    {
+       
+    }
+
+    
 }
