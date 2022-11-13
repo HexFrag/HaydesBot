@@ -23,6 +23,8 @@ const GENERAL_CHANNEL_ID = "857899639486545932";
 
 client.once('ready', () => {
 	console.log('Ready!');
+    //gxpLookup("Aeires", client.channels.cache.get(BOT_TESTING_CHANNEL_ID));
+    //updateGxp();
 });
 
 client.login(config.client.token);
@@ -62,9 +64,7 @@ client.on('messageReactionAdd', async(reaction, user) => {
         //console.log(count);
         //console.log("--------------")
 
-        await gxpController.updateRaidersGxp(null);
-        await gxpController.updateRaidersMySql();
-
+        
         //var dataResult = dataStore.query("INSERT INTO TestTable (Text) VALUES ('hellllllo')");
         //console.log("Raiders: " + Raiders.length);
     }
@@ -154,7 +154,7 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
     }
 });
 
-client.on('message', message => {
+client.on('message', async message => {
     if (!message.content.startsWith(prefix) || message.author.bot) return;
 
     
@@ -174,6 +174,24 @@ client.on('message', message => {
 
 
             return message.reply(`Latency: ${Date.now() - message.createdTimestamp}ms | API Latency: ${Math.round(client.ws.ping)}ms`);
+        }
+        else if (command === 'gxp')
+        {            
+            let name = message.member.displayName;
+            
+            gxpLookup(name, message.channel);
+            
+            
+        }
+        else if(command === "discordGxpUpdate")
+        {
+            
+            if(!message.member.roles.cache.some(role => role.name === 'Admin'))
+            {
+                return message.reply('You do not have permission to use this command');
+            }
+            
+            updateGxp();
         }
     }    
     else if (command === 'prune') {
@@ -199,6 +217,20 @@ client.on('message', message => {
         });
 	}
     
+
+    
+    
     
 });
+
+
+function gxpLookup(name, channel)
+{
+    gxpController.requestGxpInfoLookup(name, channel);    
+}
+
+function updateGxp()
+{
+    gxpController.requestGxpUpdate();
+}
 
