@@ -23,7 +23,7 @@ const GENERAL_CHANNEL_ID = "857899639486545932";
 
 client.once('ready', () => {
 	console.log('Ready!');
-    gxpLookup("Aeires", client.channels.cache.get(BOT_TESTING_CHANNEL_ID));
+    //gxpLookup("Aeires", client.channels.cache.get(BOT_TESTING_CHANNEL_ID));
     //updateGxp();
 });
 
@@ -178,16 +178,20 @@ client.on('message', async message => {
         else if (command === 'gxp')
         {            
             let name = message.member.displayName;
-            //get the gxp info by name
-            //return to channel
-            let raiderInfo = await gxpController.lookupRaiderInfo(name);
-
-            console.log(raiderInfo);
+            
+            gxpLookup(name, message.channel);
+            
             
         }
         else if(command === "discordGxpUpdate")
         {
             
+            if(!message.member.roles.cache.some(role => role.name === 'Admin'))
+            {
+                return message.reply('You do not have permission to use this command');
+            }
+            
+            updateGxp();
         }
     }    
     else if (command === 'prune') {

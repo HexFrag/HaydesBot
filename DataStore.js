@@ -132,7 +132,7 @@ module.exports = class DataStore {
         context.query(sql, null);
     }
 
-    processInfoRequest(name, channel)
+    processInfoRequest(name, channel, callback)
     {
         this.pool.getConnection(function(err, connection)
         {
@@ -143,7 +143,7 @@ module.exports = class DataStore {
                 connection.release();
                 if(err) throw err;  
                 
-                console.log(result[0]);
+                callback(result[0], channel);
                     
             });
              

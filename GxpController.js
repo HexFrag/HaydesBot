@@ -87,12 +87,44 @@ module.exports = class GxpController {
 
     requestGxpInfoLookup(name, channel)
     {
-        this.Store.processInfoRequest(name, channel);
+        this.Store.processInfoRequest(name, channel, this.gxpRequestResponse);
     }
 
     gxpRequestResponse(gxpInfo, channel)
     {
-       
+
+        //console.log(gxpInfo);
+       //https://discordjs.guide/popular-topics/embeds.html#embed-preview
+        const embed = {
+            color: 0x24e50a, //green 0x24e50a  blue 0x0b34ef  purple 0x6f00ab
+            title: gxpInfo.Name,
+            url: 'http://guildxp.com/',                        
+            fields: [
+            {
+                name: 'Rank',
+                value:  gxpInfo.CurrentRank,
+                inline: true,
+            },            
+            {
+                name: 'Exp',
+                value: `${Math.round(gxpInfo.Experience)}`,
+                inline: true,
+            },
+            {
+                name: 'Raids',
+                value: `${gxpInfo.TotalRaids}`,
+                inline: true,
+            },
+            {
+                name: 'Weeks',
+                value: `${gxpInfo.TotalWeeks}`,
+                inline: true,
+            },
+            ],        
+            timestamp: new Date().toISOString()            
+        };
+        
+        channel.send({ embed: embed });
     }
 
     
