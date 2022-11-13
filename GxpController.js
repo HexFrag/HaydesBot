@@ -82,7 +82,7 @@ module.exports = class GxpController {
         }
         console.log(`Created ${raiders.length} raiders`);
         context.Store.requestUpdate(raiders);
-        context.EventEmitter.removeListener(context.OnGxpUpdated);
+        //context.EventEmitter.removeListener(context.OnGxpUpdated);
     }
 
     requestGxpInfoLookup(name, channel)
