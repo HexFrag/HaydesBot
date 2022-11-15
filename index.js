@@ -170,7 +170,7 @@ client.on('message', async message => {
             
             
         }
-        else if(command === "discordGxpUpdate")
+        else if(command === "gxpUpdate")
         {
             
             if(!message.member.roles.cache.some(role => role.name === 'Admin'))
@@ -204,6 +204,16 @@ client.on('message', async message => {
             message.channel.send('there was an error trying to prune messages in this channel!');
         });
 	}
+    else if(command === 'gxp')
+    {
+        if(args.length > 1)
+            message.channel.send('Too many arguments for gxp command');
+
+        if(!args[0] || args[0].length == 0)
+            message.channel.send('Invalid argument for command gxp');
+
+        gxpLookup(args[0], message.channel);
+    }
     
 
     

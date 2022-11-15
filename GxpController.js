@@ -2,7 +2,7 @@ module.exports = class GxpController {
 
     Request;
 
-    RAIDER_URL = 'https://jbm6m3eptm.us-east-1.awsapprunner.com/raiders/?active=true';
+    RAIDER_URL = 'https://jbm6m3eptm.us-east-1.awsapprunner.com/raiders/';
 
     RaiderPages = [];
     Raiders = [];   
@@ -92,7 +92,8 @@ module.exports = class GxpController {
 
     gxpRequestResponse(gxpInfo, channel)
     {
-
+        if(!gxpInfo)
+            channel.send("GXP Info is not cached for this user");
         //console.log(gxpInfo);
        //https://discordjs.guide/popular-topics/embeds.html#embed-preview
         const embed = {
