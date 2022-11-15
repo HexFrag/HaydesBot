@@ -24,7 +24,7 @@ const GENERAL_CHANNEL_ID = "857899639486545932";
 client.once('ready', () => {
 	console.log('Ready!');
     //gxpLookup("Aeires", client.channels.cache.get(BOT_TESTING_CHANNEL_ID));
-    //updateGxp();
+    updateGxp();
 });
 
 client.login(config.client.token);
@@ -51,22 +51,9 @@ client.on('messageReactionAdd', async(reaction, user) => {
             await reaction.fetch();
         }
         catch(error){
-            console.error('Something went wrong when fetching the message: ', error);
-			// Return as `reaction.message.author` may be undefined/null
+            console.error('Something went wrong when fetching the message: ', error);			
 			return;
         }
-    }
-
-    if(reaction.message.channel.id === BOT_TESTING_CHANNEL_ID)
-    {
-        //const requestResult = await request('https://jbm6m3eptm.us-east-1.awsapprunner.com/raiders/?active=true');
-        //const { count } = await requestResult.body.json();
-        //console.log(count);
-        //console.log("--------------")
-
-        
-        //var dataResult = dataStore.query("INSERT INTO TestTable (Text) VALUES ('hellllllo')");
-        //console.log("Raiders: " + Raiders.length);
     }
 
     if(reaction.message.channel.name !== 'rules')
@@ -183,7 +170,7 @@ client.on('message', async message => {
             
             
         }
-        else if(command === "discordGxpUpdate")
+        else if(command === "gxpUpdate")
         {
             
             if(!message.member.roles.cache.some(role => role.name === 'Admin'))
@@ -191,6 +178,7 @@ client.on('message', async message => {
                 return message.reply('You do not have permission to use this command');
             }
             
+            message.reply('Attempting Update');
             updateGxp();
         }
     }    
@@ -216,6 +204,16 @@ client.on('message', async message => {
             message.channel.send('there was an error trying to prune messages in this channel!');
         });
 	}
+    else if(command === 'gxp')
+    {
+        if(args.length > 1)
+            message.channel.send('Too many arguments for gxp command');
+
+        if(!args[0] || args[0].length == 0)
+            message.channel.send('Invalid argument for command gxp');
+
+        gxpLookup(args[0], message.channel);
+    }
     
 
     
