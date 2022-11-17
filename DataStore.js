@@ -5,6 +5,7 @@ module.exports = class DataStore {
     config;
     pool;   
     RaiderPool;
+    ExpLevelPool;
     
     static EventEmitter;
    
@@ -12,6 +13,12 @@ module.exports = class DataStore {
     OnRaiderPoolUpdated = "OnRaiderPoolUpdated";
     OnExistingRaiderFound = "OnExistingRaiderFound";
     OnNewRaiderFound = "OnNewRaiderFound";
+    OnExpLevelPoolUpdated = "OnExpLevelPoolUpdated";
+    OnNewExpLevelFound = "OnNewExpLevelFound";
+    OnExistingExpLevelFound = "OnExistingExpLevelFound";
+
+    TABLE_GxpRaiders = "GXP_Raiders";
+    TABLE_GxpExpLevels = "GXP_Levels";
 
     constructor(config){
         this.config = config; 
@@ -24,39 +31,88 @@ module.exports = class DataStore {
         this.EventEmitter.addListener(this.OnRaiderPoolUpdated, this.prepareRaiderData);
         this.EventEmitter.addListener(this.OnExistingRaiderFound, this.updateRaider);
         this.EventEmitter.addListener(this.OnNewRaiderFound, this.insertRaider);
+        this.EventEmitter.addListener(this.OnExpLevelPoolUpdated, this.prepareExpLevelData);
+        this.EventEmitter.addListener(this.OnNewExpLevelFound, this.insertExpLevel);
+        this.EventEmitter.addListener(this.OnExistingExpLevelFound, this.updateGxpLevel);
     }
+
+    insertExpLevel(context)
+    {
+        let sql = `INSERT INTO GXP_Levels (Id, Name, ExperienceRequired ) VALUES (?)`;
+        let params = [];
+        params.push([
+            data.Id,                 
+            data.Name,            
+            data.ExperienceRequired
+        ]);
+
+        context.query(sql, params);
+    }
+
+    updateGxpLevel(context)
+    {
+
+    }
+
+    prepareExpLevelData(context)
+    {
+        console.log(`SQL Prep for ${context.ExpLevelPool.length} levels`);
+            for(let i = 0; i < context.ExpLevelPool.length; i++)
+                context.find(context.TABLE_GxpExpLevels, i, context);
+    }
+
+    
 
     prepareRaiderData(context)
     {        
         console.log(`SQL Prep for ${context.RaiderPool.length} raiders`);
         for(let i = 0; i < context.RaiderPool.length; i++)
-            context.findRaider(i, context);
+            context.find(context.TABLE_GxpRaiders, i, context);
                
             
     }
 
-    findRaider(index, context)
+    find(table ,index, context)
     {
 
-        this.pool.getConnection(function(err, connection)
+        context.pool.getConnection(function(err, connection)
         {
             if (err) throw err;
             
-            let raider = context.RaiderPool[index];            
+            let item = context.RaiderPool[index];            
 
-            let sql = `SELECT iid, Id FROM GXP_Raiders WHERE Id = ?`;
-            connection.query(sql, raider.Id, (err, result) => {
+            let sql = `SELECT iid, Id FROM ${table} WHERE Id = ?`;
+            connection.query(sql, item.Id, (err, result) => {
                 connection.release();
                 if(err) throw err;  
                 if(result.length > 0)
                 {
-                    console.log(`Existing Raider ${raider.Name} - ${raider.Id}`);
-                    context.EventEmitter.emit(context.OnExistingRaiderFound, result[0], context);
+                    switch(table)
+                    {
+                        case context.TABLE_GxpRaiders:
+                            console.log(`Existing ${table} ${item.Name} - ${item.Id}`);
+                            context.EventEmitter.emit(context.OnExistingRaiderFound, result[0], context);
+                        break;
+                        case context.TABLE_GxpExpLevels:
+                            console.log(`Existing ${table} ${item.Name} - ${item.Id}`);
+                            context.EventEmitter.emit(context.OnExistingExpLevelFound, result[0], context);
+                        break;
+                    }
+                    
                 } 
                 else
                 {
-                    console.log(`New Raider ${raider.Name} - ${raider.Id}`);
-                    context.EventEmitter.emit(context.OnNewRaiderFound, raider, context);
+                    switch(table)
+                    {
+                        case context.TABLE_GxpRaiders:
+                            console.log(`New ${table} ${item.Name} - ${item.Id}`);
+                            context.EventEmitter.emit(context.OnNewRaiderFound, item, context);
+                        break;
+                        case context.TABLE_GxpExpLevels:
+                            console.log(`New ${table} ${item.Name} - ${item.Id}`);
+                            context.EventEmitter.emit(context.OnNewExpLevelFound, item, context);
+                        break;
+                    }
                 }
                     
             });
@@ -64,11 +120,18 @@ module.exports = class DataStore {
         });
     }
 
-    requestUpdate(raiders)
+    requestRaiderUpdate(raiders)
     {       
         console.log(`SQL Update Requested with ${raiders.length} raiders`);
         this.RaiderPool = raiders; 
         this.EventEmitter.emit(this.OnRaiderPoolUpdated, this);
+    }
+
+    requestExpLevelUpdate(expLevels)
+    {
+        console.log(`SQL Update Requested with ${expLevels.length} Exp Levels`);
+        this.ExpLevelPool = expLevels;
+        this.EventEmitter.emit(this.OnExpLevelPoolUpdated, this);
     }
 
     
@@ -85,6 +148,11 @@ module.exports = class DataStore {
             });
              
         });
+    }
+
+    expLevelUpdate(context)
+    {
+        
     }
 
 

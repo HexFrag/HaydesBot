@@ -24,7 +24,7 @@ const GENERAL_CHANNEL_ID = "857899639486545932";
 client.once('ready', () => {
 	console.log('Ready!');
     //gxpLookup("Aeires", client.channels.cache.get(BOT_TESTING_CHANNEL_ID));
-    updateGxp();
+    //updateGxp();
 });
 
 client.login(config.client.token);

@@ -3,13 +3,16 @@ module.exports = class GxpController {
     Request;
 
     RAIDER_URL = 'https://jbm6m3eptm.us-east-1.awsapprunner.com/raiders/';
+    EXP_LEVEL_URL = 'https://jbm6m3eptm.us-east-1.awsapprunner.com/experienceLevels/';
 
     RaiderPages = [];
+    ExperienceLevels = [];
     Raiders = [];   
     Store; 
     EventEmitter;  
     
     OnGxpUpdated = "OnGxpUpdated";
+    OnGxpLevelsUpdated = "OnGxpLevelsUpdated"
     
 
     
@@ -32,7 +35,46 @@ module.exports = class GxpController {
         this.EventEmitter.addListener(this.OnGxpUpdated, this.consolidateRaiderData);
         await this.updateRaidersGxp(null);
     }
+
+    async requestExpLevelUpdate()
+    {
+        this.EventEmitter.addListener(this.OnGxpLevelsUpdated, this.consolidateExpLevels);
+        await this.updateExpLevels();
+    }
     
+    async updateExpLevels()
+    {
+        let requestResult = await this.Request(EXP_LEVEL_URL);
+        let expLevelObj = await requestResult.body.json();  
+
+        if(expLevelObj && expLevelObj.count > 0)
+        {
+           this.ExperienceLevels = expLevelObj.results;
+           this.EventEmitter.emit(this.OnGxpLevelsUpdated, this);
+        }
+        else
+        {
+            console.log("Failed to update GXP Levels");
+        }
+
+    }
+
+    consolidateExpLevels(context)
+    {
+        let levels = [];
+
+        for(let x = 0; x < context.ExperienceLevels; x++)
+        {
+            let expLevel = context.ExperienceLevels[x];
+            let data = {
+                Id: expLevel.id,
+                Name: expLevel.name,
+                ExperienceRequired: expLevel.experience_required
+            };
+        }
+
+        context.Store.requestExpLevelUpdate(data);
+    }
 
     async updateRaidersGxp(url)
     {
@@ -81,7 +123,7 @@ module.exports = class GxpController {
             }
         }
         console.log(`Created ${raiders.length} raiders`);
-        context.Store.requestUpdate(raiders);
+        context.Store.requestRaiderUpdate(raiders);
         //context.EventEmitter.removeListener(context.OnGxpUpdated);
     }
 
