@@ -44,7 +44,7 @@ module.exports = class GxpController {
     
     async updateExpLevels()
     {
-        let requestResult = await this.Request(EXP_LEVEL_URL);
+        let requestResult = await this.Request(this.EXP_LEVEL_URL);
         let expLevelObj = await requestResult.body.json();  
 
         if(expLevelObj && expLevelObj.count > 0)
@@ -66,14 +66,14 @@ module.exports = class GxpController {
         for(let x = 0; x < context.ExperienceLevels; x++)
         {
             let expLevel = context.ExperienceLevels[x];
-            let data = {
+            levels = {
                 Id: expLevel.id,
                 Name: expLevel.name,
                 ExperienceRequired: expLevel.experience_required
             };
         }
 
-        context.Store.requestExpLevelUpdate(data);
+        context.Store.requestExpLevelUpdate(levels);
     }
 
     async updateRaidersGxp(url)

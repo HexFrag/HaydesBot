@@ -1,11 +1,11 @@
 const Discord = require('discord.js');
-//const ytdl = require('ytdl-core');
+const axios = require('axios');
 
 const client = new Discord.Client({ partials: ['USER', 'MESSAGE', 'CHANNEL', 'REACTION', 'GUILD_MEMBER'] });
 
+const chatContexts = {};
+
 const DataStore = require('./DataStore.js');
-
-
 
 const config = require('./config.json');
 
@@ -25,23 +25,12 @@ client.once('ready', () => {
 	console.log('Ready!');
     //gxpLookup("Aeires", client.channels.cache.get(BOT_TESTING_CHANNEL_ID));
     //updateGxp();
+    //updateExpLevels();
 });
 
 client.login(config.client.token);
 
-/*
-client.on('message', msg => {
-  if (msg.content === '!play') {
-    msg.channel.send('Playing audio from YouTube!');
-    const stream = ytdl('https://www.youtube.com/watch?v=dQw4w9WgXcQ', { filter: 'audioonly' });
-    const dispatcher = msg.connection.playStream(stream);
-    dispatcher.on('end', () => {
-      msg.channel.send('Audio playback finished.');
-    });
-  }
-});
-client.login('your-discord-bot-token-goes-here');
-*/
+
 
 client.on('messageReactionAdd', async(reaction, user) => {
    
@@ -142,9 +131,39 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
 });
 
 client.on('message', async message => {
-    if (!message.content.startsWith(prefix) || message.author.bot) return;
-
     
+    if(message.mentions.has(client.user))
+    {
+        const messages = await message.channel.messages.fetch({ limit: 6 });
+        const oneHourAgo = Date.now() - (60 * 60 * 1000);
+        const contextMessages = messages.array()
+            .slice(1)
+            .reverse()
+            .filter(msg => msg.createdTimestamp > oneHourAgo)
+            .map(msg => ({ role: 'user', content: msg.content }));
+
+        const query = message.content.replace(/@HaydesBot/g, '').trim();
+
+        const response = await chatApiCall(query, message.channel.id, contextMessages);
+
+        message.channel.send(response);
+
+        setTimeout(() => {
+            delete chatContexts[message.channel.id];
+        }, 60000);
+    } else if (chatContexts[message.channel.id]) {
+        // Listen for any message in the channel during the timeout period
+        if (message.content.toLowerCase().includes('thank you') || message.content.toLowerCase().includes('stop')) {
+            // Clear the chat context immediately
+            clearTimeout(chatContexts[message.channel.id].timeout);
+            delete chatContexts[message.channel.id];
+        } else {
+            // Update the chat context with the new message
+            chatContexts[message.channel.id].messages.push({ role: 'user', content: message.content });
+        }
+    }    
+    
+    if (!message.content.startsWith(prefix) || message.author.bot) return;    
 
 	const args = message.content.slice(prefix.length).trim().split(/ +/);
 	const command = args.shift().toLowerCase();
@@ -180,7 +199,7 @@ client.on('message', async message => {
             
             message.reply('Attempting Update');
             updateGxp();
-        }
+        }        
     }    
     else if (command === 'prune') {
 
@@ -215,12 +234,42 @@ client.on('message', async message => {
         gxpLookup(args[0], message.channel);
     }
     
-
-    
-    
-    
 });
 
+
+async function chatApiCall(query, channelId, prevMessages, token) {
+    const API_URL = 'https://api.openai.com/v1/chat/completions';
+    const AUTH_HEADER = `Bearer ${token}`;
+
+    try {
+        const config = {
+            headers: {
+                'Authorization': AUTH_HEADER
+            }
+        };
+
+        const systemMessage = { role: "system", content: "You are a helpful discord bot for a World of Warcraft WOTLK guild." };
+        const userMessage = { role: "user", content: query };
+
+        let messages = [systemMessage, ...prevMessages, userMessage];
+
+        // Include previous context if available
+        const previousContext = chatContexts[channelId] || [];
+        messages = [...previousContext, ...messages];
+
+        const payload = { messages };
+        const response = await axios.post(API_URL, payload, config);
+
+        // Update the chat context
+        const assistantMessage = { role: 'assistant', content: response.data.choices[0].message.content.trim() };
+        chatContexts[channelId] = [...previousContext, userMessage, assistantMessage];
+
+        return assistantMessage.content;
+    } catch (error) {
+        console.error('Error calling Chat API:', error);
+        return 'An error occurred while talking to the assistant';
+    }
+}
 
 function gxpLookup(name, channel)
 {
@@ -230,5 +279,10 @@ function gxpLookup(name, channel)
 function updateGxp()
 {
     gxpController.requestGxpUpdate();
+}
+
+function updateExpLevels()
+{
+    gxpController.requestExpLevelUpdate();
 }
 

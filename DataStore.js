@@ -33,7 +33,7 @@ module.exports = class DataStore {
         this.EventEmitter.addListener(this.OnNewRaiderFound, this.insertRaider);
         this.EventEmitter.addListener(this.OnExpLevelPoolUpdated, this.prepareExpLevelData);
         this.EventEmitter.addListener(this.OnNewExpLevelFound, this.insertExpLevel);
-        this.EventEmitter.addListener(this.OnExistingExpLevelFound, this.updateGxpLevel);
+        this.EventEmitter.addListener(this.OnExistingExpLevelFound, this.updateExpLevel);
     }
 
     insertExpLevel(context)
@@ -49,9 +49,27 @@ module.exports = class DataStore {
         context.query(sql, params);
     }
 
-    updateGxpLevel(context)
+    updateExpLevel(context)
     {
+        let raiderData = context.RaiderPool.filter(v => v.Id == metaData.Id)[0];
+        let sql = `UPDATE GXP_Levels 
+                    SET 
+                    Id = ${context.mysql.escape(raiderData.Name)},
+                    Name = ${raiderData.TotalWeeks},
+                    ExperienceRequired = ${raiderData.TotalRaids}`;
 
+        //strange errors something is not right with data.
+        /*let params = [];                          
+        params.push([
+            raiderData.Name,            
+            raiderData.TotalWeeks,
+            raiderData.Experience,
+            raiderData.CurrentRank,
+            (raiderData.Active ? 1 : 0),
+            metaData.iid
+        ]);*/
+
+        context.query(sql, null);
     }
 
     prepareExpLevelData(context)
@@ -149,12 +167,6 @@ module.exports = class DataStore {
              
         });
     }
-
-    expLevelUpdate(context)
-    {
-        
-    }
-
 
     insertRaider(data, context)
     {
