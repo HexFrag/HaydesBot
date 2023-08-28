@@ -132,7 +132,7 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
 
 client.on('message', async message => {
     
-    if(message.mentions.has(client.user))
+    /*if(message.mentions.has(client.user))
     {
         const messages = await message.channel.messages.fetch({ limit: 6 });
         const oneHourAgo = Date.now() - (60 * 60 * 1000);
@@ -161,7 +161,7 @@ client.on('message', async message => {
             // Update the chat context with the new message
             chatContexts[message.channel.id].messages.push({ role: 'user', content: message.content });
         }
-    }    
+    } */   
     
     if (!message.content.startsWith(prefix) || message.author.bot) return;    
 
