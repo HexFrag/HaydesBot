@@ -21,6 +21,8 @@ const GUILD_ROLE_LEDGER = "914727707550552124";
 const WELCOME_FAQ_CHANNEL_ID = "907852726287884319";
 const GENERAL_CHANNEL_ID = "857899639486545932";
 
+let allowListen = false;
+
 client.once('ready', () => {
 	console.log('Ready!');
     //gxpLookup("Aeires", client.channels.cache.get(BOT_TESTING_CHANNEL_ID));
@@ -132,36 +134,95 @@ client.on("guildMemberUpdate", async (oldMember, newMember) => {
 
 client.on('message', async message => {
     
-    /*if(message.mentions.has(client.user))
+    if(message.mentions.has(client.user))
     {
-        const messages = await message.channel.messages.fetch({ limit: 6 });
+        if(!message.member.roles.cache.some(role => role.name === 'Admin'))
+        {
+            return message.reply('You do not have permission to use this right now.');
+        }
+        if(message.author.username !== 'haydes_13') {
+            return message.reply('You do not have permission to use this right now.');
+        }
+
+        const messages = await message.channel.messages.fetch({ limit: 5 });
         const oneHourAgo = Date.now() - (60 * 60 * 1000);
         const contextMessages = messages.array()
             .slice(1)
             .reverse()
             .filter(msg => msg.createdTimestamp > oneHourAgo)
-            .map(msg => ({ role: 'user', content: msg.content }));
+            .map(msg => ({ role: 'user', content: `${msg.author.displayName}: ${msg.content}` }));
 
         const query = message.content.replace(/@HaydesBot/g, '').trim();
 
-        const response = await chatApiCall(query, message.channel.id, contextMessages);
+        const thinkingMessage = await message.channel.send("Thinking...");
 
-        message.channel.send(response);
+        const response = await chatApiCall(query, message.channel.id, contextMessages, config.client.openAIToken, config.client.model);
 
-        setTimeout(() => {
-            delete chatContexts[message.channel.id];
-        }, 60000);
-    } else if (chatContexts[message.channel.id]) {
+        thinkingMessage.edit(response);
+        allowListen = true;
+        
+        if (chatContexts[message.channel.id] && chatContexts[message.channel.id].timeout) {
+            clearTimeout(chatContexts[message.channel.id].timeout);
+        }
+
+        chatContexts[message.channel.id] = {
+            timeout: setTimeout(() => {
+                if (allowListen) {
+                    delete chatContexts[message.channel.id];
+                    message.channel.send("Conversation ended.");
+                    allowListen = false;
+                }
+            }, 60000) // 3 minutes
+        };
+    } else if (chatContexts[message.channel.id] && allowListen === true) {
         // Listen for any message in the channel during the timeout period
-        if (message.content.toLowerCase().includes('thank you') || message.content.toLowerCase().includes('stop')) {
+        if (message.content.toLowerCase().includes('thank you') || message.content.toLowerCase().includes('stop') || message.content.toLowerCase().includes('thanks')) {
             // Clear the chat context immediately
             clearTimeout(chatContexts[message.channel.id].timeout);
             delete chatContexts[message.channel.id];
+            message.channel.send("Conversation ended.");
+            allowListen = false;
         } else {
-            // Update the chat context with the new message
-            chatContexts[message.channel.id].messages.push({ role: 'user', content: message.content });
+           if(message.author.bot === false)
+           {
+                if (!chatContexts[message.channel.id].messages) {
+                    chatContexts[message.channel.id].messages = [];
+                }
+
+                let contextLength = chatContexts[message.channel.id].messages.reduce((acc, msg) => acc + msg.content.length, 0);
+                while (contextLength + message.content.length > 2000) {
+                    const removedMessage = chatContexts[message.channel.id].messages.shift();
+                    contextLength -= removedMessage.content.length;
+                }
+    
+                chatContexts[message.channel.id].messages.push({ role: 'user', content: message.content });
+                
+                const thinkingMessage = await message.channel.send("Thinking...");
+
+
+                const assistantResponse = await chatApiCall(
+                    message.content,
+                    message.channel.id,
+                    chatContexts[message.channel.id].messages,
+                    config.client.openAIToken,
+                    config.client.model
+                );
+                
+                
+                // Send the assistant's response back to the Discord channel
+                thinkingMessage.edit(assistantResponse);
+                
+                clearTimeout(chatContexts[message.channel.id].timeout);
+                chatContexts[message.channel.id].timeout = setTimeout(() => {
+                    if (allowListen) {
+                        delete chatContexts[message.channel.id];
+                        message.channel.send("Conversation ended.");
+                        allowListen = false;
+                    }
+                }, 60000); // 3 minutes
+           }
         }
-    } */   
+    }    
     
     if (!message.content.startsWith(prefix) || message.author.bot) return;    
 
@@ -237,32 +298,43 @@ client.on('message', async message => {
 });
 
 
-async function chatApiCall(query, channelId, prevMessages, token) {
+async function chatApiCall(query, channelId, prevMessages, token, model) {
     const API_URL = 'https://api.openai.com/v1/chat/completions';
     const AUTH_HEADER = `Bearer ${token}`;
 
     try {
-        const config = {
+        const headers = {
             headers: {
                 'Authorization': AUTH_HEADER
             }
         };
 
-        const systemMessage = { role: "system", content: "You are a helpful discord bot for a World of Warcraft WOTLK guild." };
+        const systemMessage = { role: "system", content: "You are a helpful discord bot mascaraing as a human for a World of Warcraft WOTLK guild."+ 
+        "You act like another person and answer questions you are asked about anything."+
+        "You do not enforce discord rules but things asked and responses must comply with Discord and OpenAI content policies."+
+        "Do not concern yourself with answering questions about WoW WOTLK, you are a general assistant."+
+        "Speak like a normal human and not an AI bot."
+         };
         const userMessage = { role: "user", content: query };
 
-        let messages = [systemMessage, ...prevMessages, userMessage];
+        const previousContext = chatContexts[channelId] ? chatContexts[channelId].messages || [] : [];
+        let messages = [systemMessage, ...previousContext, ...prevMessages, userMessage];
 
-        // Include previous context if available
-        const previousContext = chatContexts[channelId] || [];
-        messages = [...previousContext, ...messages];
+        const payload = {
+            model: model,  
+            messages: messages
+        };
 
-        const payload = { messages };
-        const response = await axios.post(API_URL, payload, config);
+        const response = await axios.post(API_URL, payload, headers);
 
         // Update the chat context
+         // Update the chat context
         const assistantMessage = { role: 'assistant', content: response.data.choices[0].message.content.trim() };
-        chatContexts[channelId] = [...previousContext, userMessage, assistantMessage];
+        if (!chatContexts[channelId]) {
+            chatContexts[channelId] = { messages: [] };
+        }
+        chatContexts[channelId].messages = [...prevMessages, userMessage, assistantMessage];
+
 
         return assistantMessage.content;
     } catch (error) {
